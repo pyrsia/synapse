@@ -1,4 +1,3 @@
-use std::time::Instant;
 use synapse_rpc::message::CMessage;
 
 mod state;
@@ -21,7 +20,7 @@ impl ws::Handler for Client {
     fn on_message(&mut self, msg: ws::Message) -> ws::Result<()> {
         match msg {
             ws::Message::Text(s) => {
-                let time = Instant::now();
+                let time = std::time::Instant::now();
                 let data: CMessage = serde_json::from_str(&s).map_err(Box::new)?;
                 println!("Processing msg");
                 for resp in self.state.handle_client(0, data) {

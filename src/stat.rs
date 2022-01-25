@@ -1,5 +1,3 @@
-use std::time;
-
 const ALPHA: f64 = 0.8;
 
 #[derive(Debug)]
@@ -9,7 +7,7 @@ pub struct EMA {
     accum_ul: f64,
     accum_dl: f64,
     accum_time: f64,
-    updated: time::Instant,
+    updated: std::time::Instant,
 }
 
 impl EMA {
@@ -20,7 +18,7 @@ impl EMA {
             accum_ul: 0.,
             accum_dl: 0.,
             accum_time: 1.,
-            updated: time::Instant::now(),
+            updated: std::time::Instant::now(),
         }
     }
 
@@ -54,7 +52,7 @@ impl EMA {
         let dur =
             (elapsed.as_secs() * 1000) as f64 + f64::from(elapsed.subsec_nanos()) / 1_000_000.0;
         self.accum_time = (ALPHA * dur) + (1.0 - ALPHA) * self.accum_time;
-        self.updated = time::Instant::now();
+        self.updated = std::time::Instant::now();
     }
 }
 
@@ -67,15 +65,15 @@ mod tests {
     fn test_ema() {
         let mut s = EMA::new();
         s.add_ul(1000);
-        thread::sleep(time::Duration::from_millis(50));
+        thread::sleep(std::time::Duration::from_millis(50));
         s.tick();
 
         s.add_ul(0);
-        thread::sleep(time::Duration::from_millis(50));
+        thread::sleep(std::time::Duration::from_millis(50));
         s.tick();
 
         s.add_ul(500);
-        thread::sleep(time::Duration::from_millis(50));
+        thread::sleep(std::time::Duration::from_millis(50));
         s.tick();
 
         assert!((s.avg_ul() as i64 - 10000).abs() < 8000);

@@ -1,5 +1,3 @@
-use std::time::{Duration, Instant};
-
 use crate::control::cio;
 use crate::torrent::Peer;
 use crate::util::{random_sample, FHashSet, UHashMap};
@@ -7,7 +5,7 @@ use crate::util::{random_sample, FHashSet, UHashMap};
 pub struct Choker {
     unchoked: Vec<usize>,
     interested: FHashSet<usize>,
-    last_updated: Instant,
+    last_updated: std::time::Instant,
 }
 
 #[derive(Debug, PartialEq)]
@@ -21,7 +19,7 @@ impl Choker {
         Choker {
             unchoked: Vec::with_capacity(5),
             interested: FHashSet::default(),
-            last_updated: Instant::now(),
+            last_updated: std::time::Instant::now(),
         }
     }
 
@@ -66,13 +64,13 @@ impl Choker {
     }
 
     fn update_timer(&mut self) -> Result<(), ()> {
-        if self.last_updated.elapsed() < Duration::from_secs(10)
+        if self.last_updated.elapsed() < std::time::Duration::from_secs(10)
             || self.unchoked.len() < 5
             || self.interested.is_empty()
         {
             Err(())
         } else {
-            self.last_updated = Instant::now();
+            self.last_updated = std::time::Instant::now();
             Ok(())
         }
     }
@@ -138,7 +136,6 @@ mod tests {
     use super::{Choker, SwapRes};
     use crate::torrent::{Bitfield, Peer};
     use crate::util::UHashMap;
-    use std::time::{Duration, Instant};
 
     #[test]
     fn test_add_peers() {
@@ -187,7 +184,7 @@ mod tests {
             h.insert(i, p);
         }
         assert_eq!(c.update_upload(&mut h).is_none(), true);
-        c.last_updated = Instant::now() - Duration::from_secs(11);
+        c.last_updated = std::time::Instant::now() - std::time::Duration::from_secs(11);
         let res = c.update_upload(&mut h).unwrap();
         assert_eq!(res.choked, 0);
         assert_eq!(res.unchoked, 5);
@@ -204,7 +201,7 @@ mod tests {
             h.insert(i, p);
         }
         assert_eq!(c.update_download(&mut h).is_none(), true);
-        c.last_updated = Instant::now() - Duration::from_secs(11);
+        c.last_updated = std::time::Instant::now() - std::time::Duration::from_secs(11);
         let res = c.update_download(&mut h).unwrap();
         assert_eq!(res.choked, 0);
         assert_eq!(res.unchoked, 5);

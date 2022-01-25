@@ -1,6 +1,5 @@
 use std::collections::HashSet;
 use std::net::SocketAddr;
-use std::time;
 
 use crate::control::cio;
 use crate::torrent::Torrent;
@@ -43,14 +42,14 @@ impl<T: cio::CIO> Job<T> for SessionUpdate {
 }
 
 pub struct TorrentTxUpdate {
-    piece_update: time::Instant,
+    piece_update: std::time::Instant,
     active: UHashMap<bool>,
 }
 
 impl TorrentTxUpdate {
     pub fn new() -> TorrentTxUpdate {
         TorrentTxUpdate {
-            piece_update: time::Instant::now(),
+            piece_update: std::time::Instant::now(),
             active: UHashMap::default(),
         }
     }
@@ -64,9 +63,9 @@ impl<T: cio::CIO> Job<T> for TorrentTxUpdate {
                 torrent.update_rpc_transfer();
                 torrent.update_rpc_peers();
                 // TODO: consider making tick triggered by on the fly validation
-                if self.piece_update.elapsed() > time::Duration::from_secs(30) {
+                if self.piece_update.elapsed() > std::time::Duration::from_secs(30) {
                     torrent.rpc_update_pieces();
-                    self.piece_update = time::Instant::now();
+                    self.piece_update = std::time::Instant::now();
                 }
             }
             if !torrent.complete() {

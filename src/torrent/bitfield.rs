@@ -414,7 +414,14 @@ mod tests {
 
         bf.unset_bit(16);
 
-        assert_matches!(bf, Bitfield::I { len: 21, set: 20, .. });
+        assert_matches!(
+            bf,
+            Bitfield::I {
+                len: 21,
+                set: 20,
+                ..
+            }
+        );
     }
 
     #[test]

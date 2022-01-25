@@ -2,11 +2,9 @@ use std::borrow::Cow;
 use std::fmt;
 use std::mem;
 
-use chrono::prelude::{DateTime, Utc};
 use serde;
 use serde_json as json;
 use url::Url;
-use url_serde;
 
 use super::criterion::{Field, Queryable, FNULL};
 
@@ -141,7 +139,7 @@ pub enum SResourceUpdate<'a> {
         id: String,
         #[serde(rename = "type")]
         kind: ResourceKind,
-        last_report: DateTime<Utc>,
+        last_report: time::OffsetDateTime,
         error: Option<String>,
     },
 
@@ -211,7 +209,7 @@ pub struct Server {
     pub ses_transferred_up: u64,
     pub ses_transferred_down: u64,
     pub free_space: u64,
-    pub started: DateTime<Utc>,
+    pub started: time::OffsetDateTime,
     pub user_data: json::Value,
 }
 
@@ -268,8 +266,8 @@ pub struct Torrent {
     pub comment: Option<String>,
     pub private: bool,
     pub path: String,
-    pub created: DateTime<Utc>,
-    pub modified: DateTime<Utc>,
+    pub created: time::OffsetDateTime,
+    pub modified: time::OffsetDateTime,
     pub status: Status,
     pub error: Option<String>,
     pub priority: u8,
@@ -295,7 +293,7 @@ pub struct Torrent {
 
 impl Torrent {
     pub fn update(&mut self, update: SResourceUpdate<'_>) {
-        self.modified = Utc::now();
+        self.modified = time::OffsetDateTime::now_utc();
         match update {
             SResourceUpdate::Throttle {
                 throttle_up,
@@ -470,9 +468,8 @@ impl Peer {
 pub struct Tracker {
     pub id: String,
     pub torrent_id: String,
-    #[serde(with = "url_serde")]
     pub url: Url,
-    pub last_report: DateTime<Utc>,
+    pub last_report: time::OffsetDateTime,
     pub error: Option<String>,
     pub user_data: json::Value,
 }
@@ -1071,7 +1068,7 @@ impl Default for Server {
             ses_transferred_down: 0,
             free_space: 0,
             download_token: "".to_owned(),
-            started: Utc::now(),
+            started: time::OffsetDateTime::now_utc(),
             user_data: json::Value::Null,
         }
     }
@@ -1086,8 +1083,8 @@ impl Default for Torrent {
             creator: None,
             private: false,
             path: "".to_owned(),
-            created: Utc::now(),
-            modified: Utc::now(),
+            created: time::OffsetDateTime::now_utc(),
+            modified: time::OffsetDateTime::now_utc(),
             status: Default::default(),
             error: None,
             priority: 0,
@@ -1119,7 +1116,7 @@ impl Default for Tracker {
             id: "".to_owned(),
             torrent_id: "".to_owned(),
             url: Url::parse("http://my.tracker/announce").unwrap(),
-            last_report: Utc::now(),
+            last_report: time::OffsetDateTime::now_utc(),
             error: None,
             user_data: json::Value::Null,
         }

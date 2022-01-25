@@ -2,7 +2,6 @@ use std::fs::OpenOptions;
 use std::io::{self, Read};
 use std::net::{SocketAddr, UdpSocket};
 use std::path::Path;
-use std::time;
 
 use num_bigint::BigUint;
 
@@ -25,7 +24,7 @@ const TX_TIMEOUT_SECS: i64 = 20;
 pub struct Manager {
     id: usize,
     table: rt::RoutingTable,
-    dht_flush: time::Instant,
+    dht_flush: std::time::Instant,
     sock: UdpSocket,
     buf: Vec<u8>,
     db: amy::Sender<disk::Request>,
@@ -66,7 +65,7 @@ impl Manager {
             id,
             db,
             buf: vec![0u8; 500],
-            dht_flush: time::Instant::now(),
+            dht_flush: std::time::Instant::now(),
         })
     }
 
@@ -136,11 +135,11 @@ impl Manager {
     }
 
     pub fn tick(&mut self) {
-        if self.dht_flush.elapsed() > time::Duration::from_secs(60) {
+        if self.dht_flush.elapsed() > std::time::Duration::from_secs(60) {
             let data = self.table.serialize();
             let path = Path::new(&CONFIG.disk.session[..]).join(SESSION_FILE);
             self.db.send(disk::Request::WriteFile { data, path }).ok();
-            self.dht_flush = time::Instant::now();
+            self.dht_flush = std::time::Instant::now();
         }
         for (req, a) in self.table.tick() {
             self.send_msg(&req.encode(), a);

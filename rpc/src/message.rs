@@ -1,7 +1,5 @@
 use std::borrow::Cow;
 
-use chrono::{DateTime, Utc};
-
 use super::criterion::Criterion;
 use super::resource::{CResourceUpdate, ResourceKind, SResourceUpdate};
 
@@ -129,7 +127,7 @@ pub enum SMessage<'a> {
     RpcVersion(Version),
     TransferOffer {
         serial: u64,
-        expires: DateTime<Utc>,
+        expires: time::OffsetDateTime,
         token: String,
         size: u64,
     },

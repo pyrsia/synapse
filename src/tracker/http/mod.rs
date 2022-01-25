@@ -3,7 +3,7 @@ mod writer;
 
 use std::net::SocketAddr;
 use std::sync::Arc;
-use std::time::{Duration, Instant};
+
 use std::{io, mem};
 
 use sstream::SStream;
@@ -33,7 +33,7 @@ enum Event {
 struct Tracker {
     torrent: usize,
     url: Arc<Url>,
-    last_updated: Instant,
+    last_updated: std::time::Instant,
     redirect: bool,
     state: TrackerState,
 }
@@ -159,7 +159,7 @@ impl Handler {
         let id = resp.id;
         debug!("Received a DNS resp for {:?}", id);
         let resp = if let Some(trk) = self.connections.get_mut(&id) {
-            trk.last_updated = Instant::now();
+            trk.last_updated = std::time::Instant::now();
             match trk.state.handle(Event::DNSResolved(resp)) {
                 Ok(_) => None,
                 Err(e) => Some(Response::Tracker {
@@ -179,7 +179,7 @@ impl Handler {
 
     pub fn writable(&mut self, id: usize) -> Option<Response> {
         let resp = if let Some(trk) = self.connections.get_mut(&id) {
-            trk.last_updated = Instant::now();
+            trk.last_updated = std::time::Instant::now();
             match trk.state.handle(Event::Writable) {
                 Ok(_) => None,
                 Err(e) => Some(Response::Tracker {
@@ -200,7 +200,7 @@ impl Handler {
     pub fn readable(&mut self, id: usize, dns: &mut dns::Resolver) -> Option<Response> {
         let mut loc = None;
         let mut resp = if let Some(trk) = self.connections.get_mut(&id) {
-            trk.last_updated = Instant::now();
+            trk.last_updated = std::time::Instant::now();
             match trk.state.handle(Event::Readable) {
                 Ok(HTTPRes::Complete(r)) => {
                     debug!("Announce response received for {:?} succesfully", id);
@@ -299,7 +299,7 @@ impl Handler {
         self.connections.insert(
             id,
             Tracker {
-                last_updated: Instant::now(),
+                last_updated: std::time::Instant::now(),
                 redirect: true,
                 torrent,
                 url: original_url,
@@ -321,7 +321,7 @@ impl Handler {
     pub fn tick(&mut self) -> Vec<Response> {
         let mut resps = Vec::new();
         self.connections.retain(|id, trk| {
-            if trk.last_updated.elapsed() > Duration::from_millis(TIMEOUT_MS) {
+            if trk.last_updated.elapsed() > std::time::Duration::from_millis(TIMEOUT_MS) {
                 debug!("Announce {:?} timed out", id);
                 resps.push(Response::Tracker {
                     tid: trk.torrent,
@@ -388,7 +388,7 @@ impl Handler {
             id,
             Tracker {
                 url: req.url.clone(),
-                last_updated: Instant::now(),
+                last_updated: std::time::Instant::now(),
                 torrent: req.id,
                 state: TrackerState::new(sock, http_req, port),
                 redirect: false,

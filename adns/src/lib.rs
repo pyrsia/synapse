@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::{self, Read};
 use std::net::{IpAddr, SocketAddr, UdpSocket};
-use std::time::{Duration, Instant};
 
 const QUERY_TIMEOUT_MS: u64 = 1000;
 
@@ -13,20 +12,20 @@ pub struct Resolver {
     responses: HashMap<String, Vec<usize>>,
     buf: Vec<u8>,
     qnum: u16,
-    timeout: Duration,
+    timeout: std::time::Duration,
 }
 
 struct Query {
     domain: String,
-    query_deadline: Instant,
-    deadline: Instant,
+    query_deadline: std::time::Instant,
+    deadline: std::time::Instant,
     v4: bool,
     server: usize,
 }
 
 struct CacheEntry {
     ip: IpAddr,
-    deadline: Instant,
+    deadline: std::time::Instant,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -49,7 +48,7 @@ impl Resolver {
             queries: HashMap::new(),
             responses: HashMap::new(),
             cache: HashMap::new(),
-            timeout: Duration::from_secs(3),
+            timeout: std::time::Duration::from_secs(3),
             buf,
             qnum: 0,
         }
@@ -89,7 +88,7 @@ impl Resolver {
             queries: HashMap::new(),
             responses: HashMap::new(),
             cache: HashMap::new(),
-            timeout: Duration::from_secs(cfg.timeout as u64),
+            timeout: std::time::Duration::from_secs(cfg.timeout as u64),
             buf,
             qnum: 0,
         })
@@ -123,7 +122,7 @@ impl Resolver {
             sock.send_to(&packet, self.servers[0])?;
 
             self.responses.insert(domain.to_string(), vec![]);
-            let now = Instant::now();
+            let now = std::time::Instant::now();
             self.queries.insert(
                 qn,
                 Query {
@@ -131,7 +130,7 @@ impl Resolver {
                     server: 0,
                     domain: domain.to_string(),
                     deadline: now + self.timeout,
-                    query_deadline: now + Duration::from_millis(QUERY_TIMEOUT_MS),
+                    query_deadline: now + std::time::Duration::from_millis(QUERY_TIMEOUT_MS),
                 },
             );
         }
@@ -152,7 +151,7 @@ impl Resolver {
                                 // a response, ignore.
                                 None => continue,
                             };
-                            let now = Instant::now();
+                            let now = std::time::Instant::now();
                             for answer in packet.answers {
                                 match answer.data {
                                     dns_parser::RRData::A(addr) => {
@@ -167,7 +166,9 @@ impl Resolver {
                                             CacheEntry {
                                                 ip: addr.into(),
                                                 deadline: now
-                                                    + Duration::from_secs(answer.ttl.into()),
+                                                    + std::time::Duration::from_secs(
+                                                        answer.ttl.into(),
+                                                    ),
                                             },
                                         );
                                         continue 'process;
@@ -184,7 +185,9 @@ impl Resolver {
                                             CacheEntry {
                                                 ip: addr.into(),
                                                 deadline: now
-                                                    + Duration::from_secs(answer.ttl.into()),
+                                                    + std::time::Duration::from_secs(
+                                                        answer.ttl.into(),
+                                                    ),
                                             },
                                         );
                                         continue 'process;
@@ -220,7 +223,7 @@ impl Resolver {
     }
 
     pub fn tick<F: FnMut(Response)>(&mut self, sock: &mut UdpSocket, mut f: F) -> io::Result<()> {
-        let now = Instant::now();
+        let now = std::time::Instant::now();
         let responses = &mut self.responses;
         let servers = &self.servers;
         let mut res = Ok(());
@@ -259,7 +262,8 @@ impl Resolver {
 
 impl Query {
     pub fn next(&mut self, qn: u16) -> Vec<u8> {
-        self.query_deadline = Instant::now() + Duration::from_millis(QUERY_TIMEOUT_MS);
+        self.query_deadline =
+            std::time::Instant::now() + std::time::Duration::from_millis(QUERY_TIMEOUT_MS);
         if self.v4 {
             self.v4 = false;
             let mut query = dns_parser::Builder::new_query(qn, true);
@@ -296,7 +300,7 @@ mod tests {
         assert_eq!(resolver.query(&mut sock, 0, "google.com").unwrap(), None);
         assert_eq!(resolver.query(&mut sock, 1, "google.com").unwrap(), None);
         assert_eq!(resolver.responses.get("google.com").unwrap().len(), 2);
-        std::thread::sleep(Duration::from_millis(100));
+        std::thread::sleep(std::time::Duration::from_millis(100));
         resolver
             .tick(&mut sock, |_| {
                 panic!("timeout should not have occured yet!")
@@ -319,11 +323,11 @@ mod tests {
         resolver
             .query(&mut sock, 0, "thiswebsiteshouldexit12589t69.com")
             .unwrap();
-        std::thread::sleep(Duration::from_millis(200));
+        std::thread::sleep(std::time::Duration::from_millis(200));
         resolver
             .read(&mut sock, |_| panic!("AAAA resolution should be attmpted"))
             .unwrap();
-        std::thread::sleep(Duration::from_millis(200));
+        std::thread::sleep(std::time::Duration::from_millis(200));
         let mut processed = false;
         resolver
             .read(&mut sock, |resp| {

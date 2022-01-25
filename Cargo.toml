@@ -33,6 +33,7 @@ libc = "0.2"
 metrohash = "1"
 net2 = "0.2"
 nix = "0.11"
+percent-encoding = "2.1.0"
 rand = "0.5.3"
 rustls = "0.18.0"
 sha-1 = "0.9.1"
@@ -47,7 +48,7 @@ synapse-protocol = { path = "protocol" }
 sstream = { path = "sstream" }
 adns = { path = "adns" }
 toml = "0.4"
-url = "1"
+url = "2.2.2"
 getopts = "0.2"
 assert_matches = "1.3.0"
 ctrlc = "3.1"
@@ -58,10 +59,10 @@ version = "0.10"
 default-features = false
 features = ["no_timerfd"]
 
-[dependencies.chrono]
-version = "0.4"
+[dependencies.time]
+version = "0.3.6"
 default-features = false
-features = ["clock", "serde"]
+features = ["formatting", "parsing", "serde"]
 
 [dependencies.error-chain]
 version = "0.12.1"

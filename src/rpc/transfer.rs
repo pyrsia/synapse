@@ -1,5 +1,4 @@
 use std::io::Write;
-use std::time;
 
 use sstream::SStream;
 
@@ -39,7 +38,7 @@ struct TorrentTx {
     start: bool,
     import: bool,
     path: Option<String>,
-    last_action: time::Instant,
+    last_action: std::time::Instant,
 }
 
 const CONN_TIMEOUT: u64 = 2;
@@ -78,7 +77,7 @@ impl Transfers {
                 path,
                 start,
                 import,
-                last_action: time::Instant::now(),
+                last_action: std::time::Instant::now(),
             },
         );
     }
@@ -146,7 +145,7 @@ impl Transfers {
 
 impl TorrentTx {
     pub fn readable(&mut self) -> Result<bool, &'static str> {
-        self.last_action = time::Instant::now();
+        self.last_action = std::time::Instant::now();
         loop {
             match aread(&mut self.buf[self.pos..], &mut self.conn) {
                 IOR::Complete => return Ok(true),

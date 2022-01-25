@@ -6,8 +6,8 @@ use std::mem;
 use std::path::Path;
 
 use crate::rpc_lib;
-use chrono::{DateTime, Duration, Utc};
 use serde_json as json;
+use time::{Duration, OffsetDateTime};
 use url::Url;
 
 use super::proto::criterion::{self, Criterion, Operation};
@@ -46,7 +46,7 @@ struct Filter {
 }
 
 struct BearerToken {
-    expiration: DateTime<Utc>,
+    expiration: OffsetDateTime,
     client: usize,
     serial: u64,
     kind: TransferKind,
@@ -119,7 +119,8 @@ impl Processor {
     }
 
     pub fn remove_expired_tokens(&mut self) {
-        self.tokens.retain(|_, tok| tok.expiration > Utc::now())
+        self.tokens
+            .retain(|_, tok| tok.expiration > OffsetDateTime::now_utc())
     }
 
     pub fn get_dl(&self, id: &str) -> Option<(String, u64)> {
@@ -719,7 +720,7 @@ impl Processor {
     }
 
     fn new_transfer(&mut self, client: usize, serial: u64, kind: TransferKind) -> SMessage<'_> {
-        let expiration = Utc::now() + Duration::seconds(EXPIRATION_DUR);
+        let expiration = OffsetDateTime::now_utc() + Duration::seconds(EXPIRATION_DUR);
         let tok = random_string(15);
         self.tokens.insert(
             tok.clone(),
