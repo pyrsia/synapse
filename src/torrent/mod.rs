@@ -9,6 +9,7 @@ use std::collections::{BTreeMap, VecDeque};
 use std::fmt;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 
 use crate::bencode::BEncode;
 use byteorder::{BigEndian, ByteOrder};
@@ -92,7 +93,7 @@ pub struct Tracker {
     pub url: Arc<Url>,
     pub status: TrackerStatus,
     pub last_announce: time::OffsetDateTime,
-    pub update: Option<std::time::Instant>,
+    pub update: Option<Instant>,
 }
 
 struct Files {
@@ -529,13 +530,13 @@ impl<T: cio::CIO> Torrent<T> {
     }
 
     pub fn set_tracker_response(&mut self, url: &Url, resp: &tracker::Result<TrackerResponse>) {
-        let mut time = std::time::Instant::now();
+        let mut time = Instant::now();
         let mut empty = false;
         match *resp {
             Ok(ref r) => {
                 if let Some(tracker) = self.trackers.iter_mut().find(|t| &*t.url == url) {
                     debug!("Got valid response for {}", tracker.url);
-                    time += std::time::Duration::from_secs(u64::from(r.interval));
+                    time += Duration::from_secs(u64::from(r.interval));
                     tracker.status = TrackerStatus::Ok {
                         seeders: r.seeders,
                         leechers: r.leechers,
@@ -551,7 +552,7 @@ impl<T: cio::CIO> Torrent<T> {
             Err(tracker::Error(tracker::ErrorKind::TrackerError(ref s), _)) => {
                 if let Some(tracker) = self.trackers.iter_mut().find(|t| &*t.url == url) {
                     debug!("Got tracker level error for {}", tracker.url);
-                    time += std::time::Duration::from_secs(300);
+                    time += Duration::from_secs(300);
                     tracker.update = Some(time);
                     tracker.status = TrackerStatus::Failure(s.clone());
                     tracker.last_announce = time::OffsetDateTime::now_utc();
@@ -561,7 +562,7 @@ impl<T: cio::CIO> Torrent<T> {
                 if let Some(tracker) = self.trackers.iter_mut().find(|t| &*t.url == url) {
                     error!("Failed to query tracker {}: {}", tracker.url, e);
                     // Wait 5 minutes before trying again
-                    time += std::time::Duration::from_secs(300);
+                    time += Duration::from_secs(300);
                     tracker.update = Some(time);
                     let reason = format!("Couldn't contact tracker: {}", e);
                     tracker.status = TrackerStatus::Failure(reason);
@@ -585,7 +586,7 @@ impl<T: cio::CIO> Torrent<T> {
         }
         if let Some(end) = self.trackers.front().and_then(|t| t.update) {
             debug!("Updating tracker at interval!");
-            let cur = std::time::Instant::now();
+            let cur = Instant::now();
             if cur >= end {
                 self.update_tracker();
             }

@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::time;
 
 use crate::control::cio;
 use crate::torrent::{Bitfield, Info, Peer};
@@ -62,7 +63,7 @@ struct Downloading {
 #[derive(Clone, Debug)]
 struct Request {
     rank: usize,
-    requested_at: std::time::Instant,
+    requested_at: time::Instant,
     reqd_from: [usize; MAX_DUP_REQS],
     num_reqd: usize,
 }
@@ -409,7 +410,7 @@ impl Request {
         reqd_from[0] = peer;
         Request {
             rank,
-            requested_at: std::time::Instant::now(),
+            requested_at: time::Instant::now(),
             reqd_from,
             num_reqd: 1,
         }
@@ -419,7 +420,7 @@ impl Request {
         self.rank = rank;
         self.reqd_from[self.num_reqd] = peer;
         self.num_reqd += 1;
-        self.requested_at = std::time::Instant::now();
+        self.requested_at = time::Instant::now();
     }
 
     fn force_rereq(&mut self, peer: usize, rank: usize) {
@@ -427,7 +428,7 @@ impl Request {
             self.rereq(peer, rank);
         } else {
             self.reqd_from[0] = peer;
-            self.requested_at = std::time::Instant::now();
+            self.requested_at = time::Instant::now();
             self.rank = rank;
         }
     }

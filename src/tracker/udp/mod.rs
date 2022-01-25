@@ -1,5 +1,6 @@
 use std::io::{self, Cursor, Read, Write};
 use std::net::{SocketAddr, UdpSocket};
+use std::time;
 
 use byteorder::{BigEndian, ByteOrder, ReadBytesExt, WriteBytesExt};
 use rand::random;
@@ -27,8 +28,8 @@ pub struct Handler {
 
 struct Connection {
     torrent: usize,
-    last_updated: std::time::Instant,
-    last_retrans: std::time::Instant,
+    last_updated: time::Instant,
+    last_retrans: time::Instant,
     state: State,
     announce: Announce,
 }
@@ -90,8 +91,8 @@ impl Handler {
             id,
             Connection {
                 torrent: req.id,
-                last_updated: std::time::Instant::now(),
-                last_retrans: std::time::Instant::now(),
+                last_updated: time::Instant::now(),
+                last_retrans: time::Instant::now(),
                 state: State::ResolvingDNS { port },
                 announce: req,
             },
@@ -114,7 +115,7 @@ impl Handler {
         let resp = if let Some(conn) = self.connections.get_mut(&id) {
             match conn.state {
                 State::ResolvingDNS { port } => {
-                    conn.last_updated = std::time::Instant::now();
+                    conn.last_updated = time::Instant::now();
                     let tid = random::<u32>();
                     let mut data = [0u8; 16];
                     {
@@ -188,7 +189,7 @@ impl Handler {
         let mut retrans = Vec::new();
         {
             self.connections.retain(|id, conn| {
-                if conn.last_updated.elapsed() > std::time::Duration::from_millis(TIMEOUT_MS) {
+                if conn.last_updated.elapsed() > time::Duration::from_millis(TIMEOUT_MS) {
                     resps.push(Response::Tracker {
                         tid: conn.torrent,
                         url: conn.announce.url.clone(),
@@ -197,7 +198,7 @@ impl Handler {
                     debug!("Announce {:?} timed out", id);
                     false
                 } else {
-                    if conn.last_retrans.elapsed() > std::time::Duration::from_millis(RETRANS_MS) {
+                    if conn.last_retrans.elapsed() > time::Duration::from_millis(RETRANS_MS) {
                         debug!("Retransmiting req {:?}", id);
                         retrans.push(*id);
                     }
@@ -290,7 +291,7 @@ impl Handler {
                     .unwrap();
             }
             conn.state = State::Announcing { addr, data };
-            conn.last_updated = std::time::Instant::now();
+            conn.last_updated = time::Instant::now();
         }
         self.send_data(id)
     }
@@ -373,11 +374,11 @@ impl Handler {
             // and i dont think we need to care
             match conn.state {
                 State::Connecting { ref addr, ref data } => {
-                    conn.last_retrans = std::time::Instant::now();
+                    conn.last_retrans = time::Instant::now();
                     self.sock.send_to(data, addr).chain_err(|| ErrorKind::IO)
                 }
                 State::Announcing { ref addr, ref data } => {
-                    conn.last_retrans = std::time::Instant::now();
+                    conn.last_retrans = time::Instant::now();
                     self.sock.send_to(data, addr).chain_err(|| ErrorKind::IO)
                 }
                 _ => Ok(0),
