@@ -1,12 +1,12 @@
 use super::{proto, BUCKET_MAX, ID, MAX_BUCKETS, MIN_BOOTSTRAP_BKTS, TX_TIMEOUT_SECS};
 use crate::tracker;
 use byteorder::{BigEndian, ByteOrder, WriteBytesExt};
-use chrono::{DateTime, Utc};
 use num_bigint::BigUint;
 use rand::{self, Rng};
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::{cmp, mem};
+use time::OffsetDateTime;
 
 const MAX_SEARCH_DEPTH: u8 = 5;
 
@@ -14,10 +14,10 @@ const MAX_SEARCH_DEPTH: u8 = 5;
 pub struct RoutingTable {
     id: ID,
     buckets: Vec<Bucket>,
-    last_resp_recvd: DateTime<Utc>,
-    last_req_recvd: DateTime<Utc>,
-    last_token_refresh: DateTime<Utc>,
-    last_tick: DateTime<Utc>,
+    last_resp_recvd: OffsetDateTime,
+    last_req_recvd: OffsetDateTime,
+    last_token_refresh: OffsetDateTime,
+    last_tick: OffsetDateTime,
     transactions: HashMap<u32, Transaction>,
     torrents: HashMap<[u8; 20], Torrent>,
     bootstrapping: bool,
@@ -25,7 +25,7 @@ pub struct RoutingTable {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct Transaction {
-    created: DateTime<Utc>,
+    created: OffsetDateTime,
     kind: TransactionKind,
 }
 
@@ -50,7 +50,7 @@ struct Torrent {
 pub struct Bucket {
     start: ID,
     end: ID,
-    last_updated: DateTime<Utc>,
+    last_updated: OffsetDateTime,
     nodes: Vec<Node>,
 }
 
@@ -59,7 +59,7 @@ pub struct Node {
     id: ID,
     state: NodeState,
     addr: SocketAddr,
-    last_updated: DateTime<Utc>,
+    last_updated: OffsetDateTime,
     token: Vec<u8>,
     prev_token: Vec<u8>,
     rem_token: Option<Vec<u8>>,
@@ -82,10 +82,10 @@ impl RoutingTable {
 
         RoutingTable {
             buckets: vec![Bucket::new(BigUint::from(0u8), id_from_pow(160))],
-            last_resp_recvd: Utc::now(),
-            last_req_recvd: Utc::now(),
-            last_token_refresh: Utc::now(),
-            last_tick: Utc::now(),
+            last_resp_recvd: OffsetDateTime::now_utc(),
+            last_req_recvd: OffsetDateTime::now_utc(),
+            last_token_refresh: OffsetDateTime::now_utc(),
+            last_tick: OffsetDateTime::now_utc(),
             id: BigUint::from_bytes_be(&id),
             transactions: HashMap::new(),
             torrents: HashMap::new(),
@@ -155,7 +155,7 @@ impl RoutingTable {
     }
 
     pub fn handle_req(&mut self, req: proto::Request, mut addr: SocketAddr) -> proto::Response {
-        self.last_req_recvd = Utc::now();
+        self.last_req_recvd = OffsetDateTime::now_utc();
         match req.kind {
             // TODO: Consider adding the node if we don't have it?
             proto::RequestKind::Ping(id) => {
@@ -250,7 +250,7 @@ impl RoutingTable {
         resp: proto::Response,
         addr: SocketAddr,
     ) -> Result<tracker::Response, Vec<(proto::Request, SocketAddr)>> {
-        self.last_resp_recvd = Utc::now();
+        self.last_resp_recvd = OffsetDateTime::now_utc();
         let mut reqs = Vec::new();
         if resp.transaction.len() < 4 {
             return Err(reqs);
@@ -403,11 +403,11 @@ impl RoutingTable {
 
     pub fn tick(&mut self) -> Vec<(proto::Request, SocketAddr)> {
         let mut reqs = Vec::new();
-        let dur = Utc::now().signed_duration_since(self.last_tick);
-        if dur.num_seconds() < 10 {
+        let dur = OffsetDateTime::now_utc() - self.last_tick;
+        if dur.abs().whole_seconds() < 10 {
             return reqs;
         }
-        self.last_tick = Utc::now();
+        self.last_tick = OffsetDateTime::now_utc();
 
         let mut nodes_to_ping: Vec<proto::Node> = Vec::new();
         if self.is_bootstrapped() && self.bootstrapping {
@@ -415,19 +415,20 @@ impl RoutingTable {
         }
 
         self.transactions.retain(|_, tx| {
-            Utc::now().signed_duration_since(tx.created).num_seconds() < TX_TIMEOUT_SECS
+            let dur = OffsetDateTime::now_utc() - tx.created;
+            dur.abs().whole_seconds() < TX_TIMEOUT_SECS
         });
 
-        let dur = Utc::now().signed_duration_since(self.last_token_refresh);
-        let tok_refresh = dur.num_minutes() > 5;
+        let dur = OffsetDateTime::now_utc() - self.last_token_refresh;
+        let tok_refresh = dur.abs().whole_minutes() > 5;
 
         for bucket in &mut self.buckets {
             for node in &mut bucket.nodes {
                 if tok_refresh {
                     node.new_token();
                 }
-                let dur = Utc::now().signed_duration_since(node.last_updated);
-                if dur.num_minutes() > 15 {
+                let dur = OffsetDateTime::now_utc() - node.last_updated;
+                if dur.abs().whole_minutes() > 15 {
                     if node.good() {
                         node.state = NodeState::Questionable(1);
                         nodes_to_ping.push((&*node).into());
@@ -506,7 +507,7 @@ impl RoutingTable {
         self.transactions.insert(
             tid,
             Transaction {
-                created: Utc::now(),
+                created: OffsetDateTime::now_utc(),
                 kind: TransactionKind::Initialization,
             },
         );
@@ -520,7 +521,7 @@ impl RoutingTable {
         self.transactions.insert(
             tid,
             Transaction {
-                created: Utc::now(),
+                created: OffsetDateTime::now_utc(),
                 kind: TransactionKind::Query(id),
             },
         );
@@ -534,7 +535,7 @@ impl RoutingTable {
         self.transactions.insert(
             tid,
             Transaction {
-                created: Utc::now(),
+                created: OffsetDateTime::now_utc(),
                 kind: TransactionKind::TSearch {
                     id,
                     torrent,
@@ -609,7 +610,7 @@ impl Bucket {
         Bucket {
             start,
             end,
-            last_updated: Utc::now(),
+            last_updated: OffsetDateTime::now_utc(),
             nodes: Vec::with_capacity(BUCKET_MAX),
         }
     }
@@ -655,7 +656,7 @@ impl Node {
             id,
             state: NodeState::Bad,
             addr,
-            last_updated: Utc::now(),
+            last_updated: OffsetDateTime::now_utc(),
             prev_token: token.clone(),
             rem_token: None,
             token,
@@ -695,7 +696,7 @@ impl Node {
 
     fn update(&mut self) {
         self.state = NodeState::Good;
-        self.last_updated = Utc::now();
+        self.last_updated = OffsetDateTime::now_utc();
     }
 }
 

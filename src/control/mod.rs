@@ -2,9 +2,9 @@ use std::io::Read;
 use std::net::TcpStream;
 use std::path::PathBuf;
 use std::sync::atomic;
-use std::{fs, io, mem, process, time};
-
-use chrono::Utc;
+use std::{fs, io, mem, process};
+use std::time::{Duration, Instant};
+use time::OffsetDateTime;
 
 use crate::throttle::Throttler;
 use crate::torrent::{self, peer, Torrent};
@@ -83,8 +83,8 @@ struct JobManager<T: cio::CIO> {
 
 struct JobData<T> {
     job: T,
-    last_updated: time::Instant,
-    interval: time::Duration,
+    last_updated: Instant,
+    interval: Duration,
 }
 
 impl<T: cio::CIO> Control<T> {
@@ -99,24 +99,24 @@ impl<T: cio::CIO> Control<T> {
         let hash_idx = MHashMap::default();
         let mut jobs = JobManager::new();
 
-        jobs.add_job(job::TrackerUpdate, time::Duration::from_secs(TRK_JOB_SECS));
+        jobs.add_job(job::TrackerUpdate, Duration::from_secs(TRK_JOB_SECS));
         jobs.add_job(
             job::UnchokeUpdate,
-            time::Duration::from_secs(UNCHK_JOB_SECS),
+            Duration::from_secs(UNCHK_JOB_SECS),
         );
-        jobs.add_job(job::SessionUpdate, time::Duration::from_secs(SES_JOB_SECS));
+        jobs.add_job(job::SessionUpdate, Duration::from_secs(SES_JOB_SECS));
         jobs.add_job(
             job::TorrentTxUpdate::new(),
-            time::Duration::from_millis(TX_JOB_MS),
+            Duration::from_millis(TX_JOB_MS),
         );
         jobs.add_job(
             job::PEXUpdate::new(),
-            time::Duration::from_secs(PEX_JOB_SECS),
+            Duration::from_secs(PEX_JOB_SECS),
         );
 
-        jobs.add_cjob(SpaceUpdate, time::Duration::from_secs(SPACE_JOB_SECS));
-        jobs.add_cjob(EnqueueUpdate, time::Duration::from_secs(ENQUEUE_JOB_SECS));
-        jobs.add_cjob(SerializeUpdate, time::Duration::from_secs(SES_JOB_SECS));
+        jobs.add_cjob(SpaceUpdate, Duration::from_secs(SPACE_JOB_SECS));
+        jobs.add_cjob(EnqueueUpdate, Duration::from_secs(ENQUEUE_JOB_SECS));
+        jobs.add_cjob(SerializeUpdate, Duration::from_secs(SES_JOB_SECS));
         let job_timer = cio
             .set_timer(JOB_INT_MS)
             .map_err(|_| io_err_val("timer failure!"))?;
@@ -763,7 +763,7 @@ impl<T: cio::CIO> Control<T> {
             ses_transferred_up: self.data.session_ul,
             ses_transferred_down: self.data.session_dl,
             free_space: self.data.free_space,
-            started: Utc::now(),
+            started: OffsetDateTime::now_utc(),
             download_token: DL_TOKEN.clone(),
             ..Default::default()
         });
@@ -855,19 +855,19 @@ impl<T: cio::CIO> JobManager<T> {
         }
     }
 
-    pub fn add_job<J: job::Job<T> + 'static>(&mut self, job: J, interval: time::Duration) {
+    pub fn add_job<J: job::Job<T> + 'static>(&mut self, job: J, interval: Duration) {
         self.jobs.push(JobData {
             job: Box::new(job),
             interval,
-            last_updated: time::Instant::now(),
+            last_updated: Instant::now(),
         })
     }
 
-    pub fn add_cjob<J: CJob<T> + 'static>(&mut self, job: J, interval: time::Duration) {
+    pub fn add_cjob<J: CJob<T> + 'static>(&mut self, job: J, interval: Duration) {
         self.cjobs.push(JobData {
             job: Box::new(job),
             interval,
-            last_updated: time::Instant::now(),
+            last_updated: Instant::now(),
         })
     }
 
@@ -875,13 +875,13 @@ impl<T: cio::CIO> JobManager<T> {
         for j in &mut self.jobs {
             if j.last_updated.elapsed() > j.interval {
                 j.job.update(&mut control.torrents);
-                j.last_updated = time::Instant::now();
+                j.last_updated = Instant::now();
             }
         }
         for j in &mut self.cjobs {
             if j.last_updated.elapsed() > j.interval {
                 j.job.update(control);
-                j.last_updated = time::Instant::now();
+                j.last_updated = Instant::now();
             }
         }
     }

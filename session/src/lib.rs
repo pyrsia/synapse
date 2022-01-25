@@ -36,7 +36,7 @@ pub mod torrent {
     pub mod ver_fa1b6f {
         use super::Bitfield;
 
-        use chrono::{DateTime, Utc};
+        use time::OffsetDateTime;
 
         use std::path::PathBuf;
 
@@ -50,7 +50,7 @@ pub mod torrent {
             pub path: Option<String>,
             pub priority: u8,
             pub priorities: Vec<u8>,
-            pub created: DateTime<Utc>,
+            pub created: OffsetDateTime,
             pub throttle_ul: Option<i64>,
             pub throttle_dl: Option<i64>,
             pub trackers: Vec<String>,
@@ -102,7 +102,7 @@ pub mod torrent {
 
         use super::Bitfield;
 
-        use chrono::{DateTime, Utc};
+        use time::OffsetDateTime;
 
         #[derive(Serialize, Deserialize)]
         pub struct Session {
@@ -114,7 +114,7 @@ pub mod torrent {
             pub path: Option<String>,
             pub priority: u8,
             pub priorities: Vec<u8>,
-            pub created: DateTime<Utc>,
+            pub created: OffsetDateTime,
             pub throttle_ul: Option<i64>,
             pub throttle_dl: Option<i64>,
             pub trackers: Vec<String>,
@@ -173,7 +173,7 @@ pub mod torrent {
         pub use super::ver_6e27af as next;
         use super::Bitfield;
 
-        use chrono::{DateTime, Utc};
+        use time::OffsetDateTime;
 
         #[derive(Serialize, Deserialize)]
         pub struct Session {
@@ -185,7 +185,7 @@ pub mod torrent {
             pub path: Option<String>,
             pub priority: u8,
             pub priorities: Vec<u8>,
-            pub created: DateTime<Utc>,
+            pub created: OffsetDateTime,
             pub throttle_ul: Option<i64>,
             pub throttle_dl: Option<i64>,
         }
@@ -219,7 +219,7 @@ pub mod torrent {
         use super::ver_249b1b as next;
         use super::Bitfield;
 
-        use chrono::{DateTime, Utc};
+        use time::OffsetDateTime;
 
         #[derive(Serialize, Deserialize)]
         pub struct Session {
@@ -231,7 +231,7 @@ pub mod torrent {
             pub path: Option<String>,
             pub priority: u8,
             pub priorities: Vec<u8>,
-            pub created: DateTime<Utc>,
+            pub created: OffsetDateTime,
             pub throttle_ul: Option<i64>,
             pub throttle_dl: Option<i64>,
         }
@@ -350,7 +350,7 @@ pub mod torrent {
         use super::ver_5f166d as next;
         use super::Bitfield;
 
-        use chrono::{DateTime, Utc};
+        use time::OffsetDateTime;
 
         #[derive(Serialize, Deserialize)]
         pub struct Session {
@@ -363,7 +363,7 @@ pub mod torrent {
             pub wanted: Bitfield,
             pub priority: u8,
             pub priorities: Vec<u8>,
-            pub created: DateTime<Utc>,
+            pub created: OffsetDateTime,
             pub throttle_ul: Option<i64>,
             pub throttle_dl: Option<i64>,
         }

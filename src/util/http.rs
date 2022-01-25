@@ -1,4 +1,4 @@
-use url::percent_encoding::percent_encode_byte;
+use percent_encoding::percent_encode_byte;
 
 #[derive(Debug)]
 pub struct RequestBuilder<'a> {

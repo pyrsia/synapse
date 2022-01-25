@@ -13,7 +13,6 @@ use std::time::{Duration, Instant};
 
 use crate::bencode::BEncode;
 use byteorder::{BigEndian, ByteOrder};
-use chrono::{DateTime, Utc};
 use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4};
 use url::Url;
 
@@ -71,7 +70,7 @@ pub struct Torrent<T: cio::CIO> {
     path: Option<String>,
     info_bytes: Vec<u8>,
     info_idx: Option<usize>,
-    created: DateTime<Utc>,
+    created: time::OffsetDateTime,
 }
 
 #[derive(Clone, Debug)]
@@ -93,7 +92,7 @@ pub enum StatusState {
 pub struct Tracker {
     pub url: Arc<Url>,
     pub status: TrackerStatus,
-    pub last_announce: DateTime<Utc>,
+    pub last_announce: time::OffsetDateTime,
     pub update: Option<Instant>,
 }
 
@@ -251,7 +250,7 @@ impl<T: cio::CIO> Torrent<T> {
                     let tracker = Tracker {
                         status: TrackerStatus::Updating,
                         update: None,
-                        last_announce: Utc::now(),
+                        last_announce: time::OffsetDateTime::now_utc(),
                         url: Arc::clone(&info.url_list[i][j]),
                     };
                     trackers.push_back(tracker);
@@ -261,7 +260,7 @@ impl<T: cio::CIO> Torrent<T> {
             let tracker = Tracker {
                 status: TrackerStatus::Updating,
                 update: None,
-                last_announce: Utc::now(),
+                last_announce: time::OffsetDateTime::now_utc(),
                 url: announce.clone(),
             };
             trackers.push_back(tracker);
@@ -293,7 +292,7 @@ impl<T: cio::CIO> Torrent<T> {
             status,
             info_bytes,
             info_idx,
-            created: Utc::now(),
+            created: time::OffsetDateTime::now_utc(),
         };
         t.start(true);
         if import {
@@ -373,7 +372,7 @@ impl<T: cio::CIO> Torrent<T> {
             .map(|url| Tracker {
                 status: TrackerStatus::Updating,
                 update: None,
-                last_announce: Utc::now(),
+                last_announce: time::OffsetDateTime::now_utc(),
                 url: Arc::new(url),
             })
             .collect();
@@ -383,7 +382,7 @@ impl<T: cio::CIO> Torrent<T> {
                 let tracker = Tracker {
                     status: TrackerStatus::Updating,
                     update: None,
-                    last_announce: Utc::now(),
+                    last_announce: time::OffsetDateTime::now_utc(),
                     url: announce.clone(),
                 };
                 trackers.push_back(tracker);
@@ -544,7 +543,7 @@ impl<T: cio::CIO> Torrent<T> {
                         interval: r.interval,
                     };
                     tracker.update = Some(time);
-                    tracker.last_announce = Utc::now();
+                    tracker.last_announce = time::OffsetDateTime::now_utc();
                     if r.peers.is_empty() {
                         empty = true;
                     }
@@ -556,7 +555,7 @@ impl<T: cio::CIO> Torrent<T> {
                     time += Duration::from_secs(300);
                     tracker.update = Some(time);
                     tracker.status = TrackerStatus::Failure(s.clone());
-                    tracker.last_announce = Utc::now();
+                    tracker.last_announce = time::OffsetDateTime::now_utc();
                 }
             }
             Err(ref e) => {
@@ -567,7 +566,7 @@ impl<T: cio::CIO> Torrent<T> {
                     tracker.update = Some(time);
                     let reason = format!("Couldn't contact tracker: {}", e);
                     tracker.status = TrackerStatus::Failure(reason);
-                    tracker.last_announce = Utc::now();
+                    tracker.last_announce = time::OffsetDateTime::now_utc();
                 }
             }
         }
@@ -623,7 +622,7 @@ impl<T: cio::CIO> Torrent<T> {
         self.trackers.push_front(Tracker {
             status: TrackerStatus::Updating,
             update: None,
-            last_announce: Utc::now(),
+            last_announce: time::OffsetDateTime::now_utc(),
             url: Arc::new(url),
         });
         {
@@ -1532,7 +1531,7 @@ impl<T: cio::CIO> Torrent<T> {
             // TODO: Properly add this
             path: self.path.as_ref().unwrap_or(&CONFIG.disk.directory).clone(),
             created: self.created,
-            modified: Utc::now(),
+            modified: time::OffsetDateTime::now_utc(),
             status: self.status.as_rpc(self.stat.avg_ul(), self.stat.avg_dl()),
             error: self.error(),
             priority: self.priority,

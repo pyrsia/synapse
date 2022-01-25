@@ -18,10 +18,5 @@ regex = "1"
 serde = "1"
 serde_derive = "1"
 serde_json = "1"
-url = "1"
-url_serde = "0.2"
-
-[dependencies.chrono]
-version = "0.4"
-default-features = false
-features = ["clock", "serde"]
+time = { version = "0.3.6", features = ["serde"] }
+url = { version = "2.2.2", features = ["serde"] }

@@ -1,6 +1,5 @@
 use std::f32;
 
-use chrono::{DateTime, Utc};
 use regex::{self, Regex};
 
 use crate::resource::ResourceKind;
@@ -50,7 +49,7 @@ pub enum Value {
     S(String),
     N(i64),
     F(f32),
-    D(DateTime<Utc>),
+    D(time::OffsetDateTime),
     E(Option<()>),
     V(Vec<Value>),
 }
@@ -61,7 +60,7 @@ pub enum Field<'a> {
     S(&'a str),
     N(i64),
     F(f32),
-    D(DateTime<Utc>),
+    D(time::OffsetDateTime),
     E(Option<()>),
     V(Vec<Field<'a>>),
     R(ResourceKind),

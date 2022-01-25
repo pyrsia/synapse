@@ -77,12 +77,12 @@ macro_rules! log(
         {
             #[allow(unused_imports)]
             use std::io::Write;
-            use chrono::Local;
+            use ::time::{OffsetDateTime, format_description};
             if unsafe { $level <= $crate::log::LEVEL } {
                 let mut msg = Vec::with_capacity(25);
-                let time = Local::now();
+                let time = OffsetDateTime::now_utc().format(&format_description::well_known::Rfc3339).unwrap();
                 write!(&mut msg, "{} [{}:{}] {}: ",
-                       time.format("%x %X"), module_path!(), line!(), $level).ok();
+                       time, module_path!(), line!(), $level).ok();
                 write!(&mut msg, $fmt).ok();
                 write!(&mut msg, "\n").ok();
                 let stderr = std::io::stderr();
@@ -96,12 +96,12 @@ macro_rules! log(
         {
             #[allow(unused_imports)]
             use std::io::Write;
-            use chrono::Local;
+            use ::time::{OffsetDateTime, format_description};
             if unsafe { $level <= $crate::log::LEVEL } {
                 let mut msg = Vec::with_capacity(25);
-                let time = Local::now();
+                let time = OffsetDateTime::now_utc().format(&format_description::well_known::Rfc3339).unwrap();
                 write!(&mut msg, "{} [{}:{}] {}: ",
-                       time.format("%x %X"), module_path!(), line!(), $level).ok();
+                       time, module_path!(), line!(), $level).ok();
                 write!(&mut msg, $fmt, $($arg)*).ok();
                 write!(&mut msg, "\n").ok();
                 let stderr = std::io::stderr();
