@@ -37,16 +37,21 @@ jobs:
         command: deb
         args: --no-build -v          
       
-    - name: Upload Artifact Linux
-      uses: actions/upload-artifact@v2.2.4
+    # add the prysia.deb file to the apt repo which is part of
+    # the github website repo
+    - uses: sbtaylor15/apt-repo-action@v2.0.4
+      # Only when we push on the main repository should we upload the results
+      if: github.repository_owner == 'pyrsia' && github.event_name == 'push'
       with:
-        name: synapse_sycli
-        path: |
-          target/release/synapse
-          target/release/sycli
-        
-    - name: Upload Artifact Linux as .deb package
-      uses: actions/upload-artifact@v2.2.4
-      with:
-        name: synapse_deb
-        path: target/debian/*.deb
+        github_token: ${{ secrets.APT }}
+        repo_supported_version: |
+          bionic
+        repo_supported_arch: |
+          amd64
+        page_branch: gh-pages
+        file: /home/runner/work/synapse/synapse/target/debian/synapse-bt_1.0.0_amd64.deb
+        file_target_version: bionic
+        public_key: ${{ secrets.GPG_PUBLIC }}
+        private_key: ${{ secrets.GPG_PRIVATE }}
+        key_passphrase: ${{ secrets.GPG_SECRET }}
+        github_repository: pyrsia/pyrisa.github.io
