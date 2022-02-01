@@ -1,11 +1,12 @@
 [package]
 name = "synapse-bt"
+readme = "README.md"
 description = "Synapse BitTorrent client"
 version = "1.0.0"
 authors = ["Luminarys <postmaster@gensok.io>"]
 build = "build.rs"
 license = "ISC"
-repository = "https://github.com/Luminarys/synapse"
+repository = "https://github.com/pyrsia/synapse"
 edition = "2018"
 
 [[bin]]
@@ -99,6 +100,9 @@ assets = [
     ["target/release/synapse", "usr/bin/", "755"],
     ["target/release/sycli", "usr/bin/", "755"],
     ["README.md", "usr/share/doc/synapse/README", "644"],
-    ["example_config.toml", "usr/share/synapse/synapse.toml.example", "644"],
-    ["sycli_config.toml", "usr/share/synapse/sycli.toml.example", "644"]
+    ["example_config.toml", "usr/local/share/synapse/synapse.toml", "644"],
+    ["sycli_config.toml", "usr/local/share/synapse/sycli.toml", "644"]
 ]
+section = "devel"
+maintainer-scripts = "installers/debian/"
+systemd-units = { unit-name = "synapse-bt", unit-scripts = "installers/debian/" }
