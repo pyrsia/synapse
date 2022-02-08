@@ -1,0 +1,9 @@
+[Unit]
+Description=Synapse BitTorrent
+
+[Service]
+ExecStart=/usr/bin/synapse -c /usr/local/share/synapse/synapse.toml
+
+[Install]
+WantedBy=multi-user.target
+

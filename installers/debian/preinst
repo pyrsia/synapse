@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+mkdir -p /usr/local/share/synapse 2>/dev/null
+mkdir -p /usr/local/var/synapse 2>/dev/null
+
+#DEBHELPER#
+
